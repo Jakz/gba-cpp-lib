@@ -114,7 +114,7 @@ int main(void) {
   
   mode3_canvas* canvas = gfx.getMode3Canvas();
   
-  canvas->clear(color_t(0,31,0));
+  canvas->clear(color_t(0,0,0));
   
   while (1)
   {    
@@ -216,9 +216,9 @@ int main(void) {
     static fpp scale = fpp(1.0f);
     static u16 angle = 0;
 
-    auto* affine = gfx.getAffineOAM(0);
+    /*auto* affine = gfx.getAffineOAM(0);
     
-    affine->set<fpp>(scale, scale, angle>>1);
+    affine->set<fpp>(scale, scale, angle>>1);*/
 
     ++angle;
     

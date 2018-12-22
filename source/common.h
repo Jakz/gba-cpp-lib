@@ -6,7 +6,6 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t u8;
 typedef u32 addr_t;
-typedef u32 off_t;
 
 using s32 = int32_t;
 using s16 = int16_t;
@@ -16,7 +15,7 @@ using vu16 = volatile u16;
 static constexpr addr_t PORT_BASE = 0x04000000;
 
 static constexpr addr_t VRAM_BASE = 0x06000000;
-static constexpr off_t VRAM_OBJ_TILES = 0x06010000;
+static constexpr addr_t VRAM_OBJ_TILES = 0x06010000;
 static constexpr u32 OBJ_TILE_SIZE_4BPP = 0x20;
 
 static constexpr addr_t VRAM_PALETTE_BG = 0x05000000;
