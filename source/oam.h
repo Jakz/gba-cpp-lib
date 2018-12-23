@@ -37,6 +37,14 @@ enum class oam_size
   SIZE32x64 = 3
 };
 
+enum class oam_affine_mode
+{
+  DISABLED = 0b00,
+  ENABLED = 0b01,
+  ENABLED_DOUBLE_SIZE = 0b11,
+  HIDDEN = 0b10
+};
+
 struct oam_entry
 {
   u16 attr0;
@@ -47,16 +55,22 @@ struct oam_entry
   static constexpr u16 MASK_X = 0x01FF;
   static constexpr u16 MASK_AFFINE_INDEX = 0x3E00;
   static constexpr u16 SHIFT_AFFINE_INDEX = 9;
+
+  static constexpr u16 MASK_AFFINE_MODE = 0x0300;
+  static constexpr u16 SHIFT_AFFINE_MODE = 8;
   
   /* attr0 */
   inline u32 y() const { return attr0 & MASK_Y; }
   inline void setY(u32 value) { attr0 = (attr0 & ~MASK_Y) | (value & MASK_Y); }
   
+  inline void setAffineMode(oam_affine_mode mode) { attr0 = (attr0 & ~MASK_AFFINE_MODE) | static_cast<u16>(mode) << SHIFT_AFFINE_MODE; }
+  inline oam_affine_mode affineMode() const { return static_cast<oam_affine_mode>((attr0 & MASK_AFFINE_MODE) >> SHIFT_AFFINE_MODE); }
+  
   inline bool isAffineEnabled() const { return attr0 & 0x0100; }
   inline void setAffineEnabled(bool v) { attr0 = (attr0 & ~0x0100) | (v << 8); }
   
-  inline bool isDoubleSize() const { return attr0 & 0x0200; }
-  inline void setDoubleSize(bool v) { attr0 = (attr0 & ~0x0200) | (v << 9); }
+  inline bool isDoubleSizeForAffine() const { return attr0 & 0x0200; }
+  inline void setDoubleSizeForAffine(bool v) { attr0 = (attr0 & ~0x0200) | (v << 9); }
   
   inline bool isHidden() const { return attr0 & 0x0200; }
   inline oam_mode mode() const { return static_cast<oam_mode>((attr0 & 0x0C00) >> 10); }

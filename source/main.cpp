@@ -102,9 +102,8 @@ int main(void) {
   object->setShape(oam_shape::WIDE);
   object->setSize(oam_size::SIZE32x16);
   
-  object->setAffineEnabled(true);
+  object->setAffineMode(oam_affine_mode::DISABLED);
   object->setAffineIndex(0);
-  object->setDoubleSize(true);
 
   Ship ship;
   ship.x = 50;
@@ -218,7 +217,7 @@ int main(void) {
 
     /*auto* affine = gfx.getAffineOAM(0);
     
-    affine->set<fpp>(scale, scale, angle>>1);*/
+    affine->set<fpp>(scale, scale, angle>>1);
 
     ++angle;
     
@@ -241,7 +240,7 @@ int main(void) {
         scale = 0.5f;
         growing = true;
       }
-    }
+    }*/
     
     
     /*if (growing)
