@@ -94,7 +94,9 @@ struct port_disp_cnt
   void setMode(video_mode mode) { value = (value & ~VIDEO_MODE_MASK) | static_cast<u32>(mode); }
   video_mode mode() const { return static_cast<video_mode>(value & VIDEO_MODE_MASK); }
   
-  void enableBG2() { value = (value & ~ENABLE_BG2) | ENABLE_BG2; }
+  inline void enableBG0() { value = (value & ~ENABLE_BG0) | ENABLE_BG0; }
+
+  inline void enableBG2() { value = (value & ~ENABLE_BG2) | ENABLE_BG2; }
   bool isBG2Enabled() { return (value & ENABLE_BG2) != 0; }
   
   void enableOBJ() { value = (value & ~ENABLE_OBJ) | ENABLE_OBJ; }
@@ -135,6 +137,69 @@ struct port_disp_stat
   u32 vcount() const { return value & 0xFF; }
 };
 
+enum class bg_screen_size
+{
+  SIZE32x32 = 0,
+  SIZE64x32 = 1,
+  SIZE32x64 = 2,
+  SIZE64x64 = 3
+};
+
+struct port_bg_cnt
+{
+  enum
+  {
+    PRIORITY_MASK         = 0x0003,
+    CHAR_BASE_BLOCK_MASK  = 0x000C,
+    CHAR_BASE_BLOCK_SHIFT = 3,
+    MOSAIC_FLAG           = 0x0040,
+    COLOR_MODE_FLAG       = 0x0080,
+    
+    SCREEN_BLOCK_MASK     = 0x1F00,
+    SCREEN_BLOCK_SHIFT    = 8,
+    
+    OVERFLOW_MODE_FLAG    = 0x2000,
+    
+    SCREEN_SIZE_MASK      = 0xC000,
+    SCREEN_SIZE_SHIFT     = 13
+  };
+  
+  u16 value;
+  
+  inline void set(u16 v) { value = v; }
+  
+  inline void setTileDataBlock(fu16 v) { value = (value & ~CHAR_BASE_BLOCK_MASK) | (v << CHAR_BASE_BLOCK_SHIFT); }
+
+  inline void setTileMapBlock(fu16 v) { value = (value & ~SCREEN_BLOCK_MASK) | (v << SCREEN_BLOCK_SHIFT); }
+  
+  inline void setScreenSize(bg_screen_size v) { value = (value & ~SCREEN_SIZE_MASK) | (static_cast<u16>(v) << SCREEN_SIZE_SHIFT); }
+  
+  static inline addr_t tileDataAtIndex(fu16 i) { return VRAM_BASE + TILE_DATA_BASE_MULTIPLIER*i; }
+  static inline addr_t tileMapAtIndex(fu16 i) { return VRAM_BASE + TILE_MAP_BASE_MULTIPLIER*i; }
+};
+
+struct tile_entry
+{
+  enum
+  {
+    INDEX_MASK =    0x03FF,
+    HOR_FLIP_FLAG = 0x0400,
+    VER_FLIP_FLAG = 0x0800,
+    PALETTE_MASK  = 0xF000,
+    PALETTE_SHIFT = 12
+  };
+
+  u16 value;
+  
+  inline void set(u16 value) { this->value = value; }
+
+  inline void setIndex(fu16 v) { value = (value & ~INDEX_MASK) | v; }
+  
+  inline void setPalette(fu16 i) { value = (value & ~PALETTE_MASK) | (i << PALETTE_SHIFT); }
+};
+
+using port_bg_hofs = u16;
+using port_bg_vofs = u16;
 
 class Gfx
 {
@@ -152,6 +217,7 @@ public:
   oam_affine* getAffineOAM(u32 index) { return reinterpret_cast<oam_affine*>(as<u16>(OAM_BASE) + sizeof(oam_affine)*index); }
   
   inline palette_t& getObjPalette(u32 paletteIndex) { return *reinterpret_cast<palette_t*>(as<u16>(VRAM_PALETTE_OBJ) + paletteIndex*sizeof(palette_t)); }
+  inline palette_t& getBgPalette(fu16 paletteIndex) { return *reinterpret_cast<palette_t*>(as<u16>(VRAM_PALETTE_BG) + paletteIndex*sizeof(palette_t)); }
   
   inline void setObjPalette(u32 paletteIndex, u32 colorIndex, u32 color)
   {
@@ -163,4 +229,11 @@ public:
   inline u32* getObjTileData(u32 index) { return as<u32>(VRAM_OBJ_TILES) + index*OBJ_TILE_SIZE_4BPP/sizeof(u32); }
   
   inline port_disp_cnt* dispCnt() { return as<port_disp_cnt>(PORT_BASE); }
+  
+  inline port_bg_cnt* bg0Cnt() { return as<port_bg_cnt>(PORT_BG0CNT); }
+  inline port_bg_hofs* bg0Hofs() { return as<port_bg_hofs>(PORT_BG0HOFS); }
+  inline port_bg_vofs* bg0Vofs() { return as<port_bg_hofs>(PORT_BG0VOFS); }
+  
+  inline u32* getBgTileData(fu16 block, fu16 index) { return as<u32>(port_bg_cnt::tileDataAtIndex(block)) + index*BG_TILE_SIZE_4BPP/sizeof(u32); }
+  inline tile_entry* getBgTileMap(fu16 block) { return as<tile_entry>(port_bg_cnt::tileMapAtIndex(block)); }
 };

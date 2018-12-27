@@ -72,6 +72,7 @@ struct oam_entry
   inline bool isDoubleSizeForAffine() const { return attr0 & 0x0200; }
   inline void setDoubleSizeForAffine(bool v) { attr0 = (attr0 & ~0x0200) | (v << 9); }
   
+  inline void hide() { setAffineMode(oam_affine_mode::HIDDEN); }
   inline bool isHidden() const { return attr0 & 0x0200; }
   inline oam_mode mode() const { return static_cast<oam_mode>((attr0 & 0x0C00) >> 10); }
   inline bool isMosaic() const { return attr0 & 0x1000; }
