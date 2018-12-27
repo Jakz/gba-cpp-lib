@@ -19,20 +19,6 @@ static constexpr u32 KB2 = 2048;
 
 static constexpr addr_t PORT_BASE = 0x04000000;
 
-static constexpr addr_t PORT_BG0CNT = PORT_BASE + 0x08;
-static constexpr addr_t PORT_BG1CNT = PORT_BASE + 0x0A;
-static constexpr addr_t PORT_BG2CNT = PORT_BASE + 0x0C;
-static constexpr addr_t PORT_BG3CNT = PORT_BASE + 0x0E;
-
-static constexpr addr_t PORT_BG0HOFS = PORT_BASE + 0x10;
-static constexpr addr_t PORT_BG0VOFS = PORT_BASE + 0x12;
-static constexpr addr_t PORT_BG1HOFS = PORT_BASE + 0x14;
-static constexpr addr_t PORT_BG1VOFS = PORT_BASE + 0x16;
-static constexpr addr_t PORT_BG2HOFS = PORT_BASE + 0x18;
-static constexpr addr_t PORT_BG2VOFS = PORT_BASE + 0x1A;
-static constexpr addr_t PORT_BG3HOFS = PORT_BASE + 0x1C;
-static constexpr addr_t PORT_BG3VOFS = PORT_BASE + 0x1E;
-
 static constexpr addr_t VRAM_BASE = 0x06000000;
 static constexpr addr_t VRAM_OBJ_TILES = 0x06010000;
 static constexpr u32 OBJ_TILE_SIZE_4BPP = 0x20;
@@ -52,6 +38,29 @@ static constexpr addr_t PORT_VCOUNT = PORT_BASE + 0x6;
 static constexpr addr_t PORT_DISPCNT = PORT_BASE;
 static constexpr addr_t PORT_DISPSTAT = PORT_BASE + 0x4;
 
+static constexpr addr_t PORT_BG0CNT = PORT_BASE + 0x08;
+static constexpr addr_t PORT_BG1CNT = PORT_BASE + 0x0A;
+static constexpr addr_t PORT_BG2CNT = PORT_BASE + 0x0C;
+static constexpr addr_t PORT_BG3CNT = PORT_BASE + 0x0E;
+
+static constexpr addr_t PORT_BG0HOFS = PORT_BASE + 0x10;
+static constexpr addr_t PORT_BG0VOFS = PORT_BASE + 0x12;
+static constexpr addr_t PORT_BG1HOFS = PORT_BASE + 0x14;
+static constexpr addr_t PORT_BG1VOFS = PORT_BASE + 0x16;
+static constexpr addr_t PORT_BG2HOFS = PORT_BASE + 0x18;
+static constexpr addr_t PORT_BG2VOFS = PORT_BASE + 0x1A;
+static constexpr addr_t PORT_BG3HOFS = PORT_BASE + 0x1C;
+static constexpr addr_t PORT_BG3VOFS = PORT_BASE + 0x1E;
+
+static constexpr addr_t PORT_TM0CNT_L = PORT_BASE + 0x100;
+static constexpr addr_t PORT_TM1CNT_L = PORT_BASE + 0x104;
+static constexpr addr_t PORT_TM2CNT_L = PORT_BASE + 0x108;
+static constexpr addr_t PORT_TM3CNT_L = PORT_BASE + 0x10C;
+
+static constexpr addr_t PORT_TM0CNT_H = PORT_BASE + 0x102;
+static constexpr addr_t PORT_TM1CNT_H = PORT_BASE + 0x106;
+static constexpr addr_t PORT_TM2CNT_H = PORT_BASE + 0x10A;
+static constexpr addr_t PORT_TM3CNT_H = PORT_BASE + 0x10E;
 
 static constexpr addr_t PORT_KEYINPUT = PORT_BASE + 0x130;
 

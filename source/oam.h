@@ -83,10 +83,10 @@ struct oam_entry
    
   /* attr1 */
   inline u32 x() const { return attr1 & MASK_X; }
-  inline void setX(u32 value) { attr1 = (attr1 & ~MASK_X) | (value & MASK_X); }
+  inline void setX(fu16 value) { attr1 = (attr1 & ~MASK_X) | (value & MASK_X); }
 
   inline u32 affineIndex() const { return (attr1 & MASK_AFFINE_INDEX) >> SHIFT_AFFINE_INDEX; }
-  inline void setAffineIndex(u32 index) { attr1 = (attr1 & ~MASK_AFFINE_INDEX) | (index << SHIFT_AFFINE_INDEX); }
+  inline void setAffineIndex(fu16 index) { attr1 = (attr1 & ~MASK_AFFINE_INDEX) | (index << SHIFT_AFFINE_INDEX); }
   
   inline bool isFlipX() const { return attr1 & 0x1000; }
   inline void setFlipX(bool v) { attr1 = (attr1 & ~0x1000) | (v << 12); }

@@ -21,10 +21,9 @@ enum Key : u16
 
 struct KeyStatus
 {
-  const u16 status;
+  u16 status;
   
   KeyStatus(u16 status) : status(status) { }
-  
   bool isPressed(Key key) const { return !(status & key); }
 };
 
@@ -32,5 +31,56 @@ struct KeyStatus
 class Keypad
 {
 public:
-  const KeyStatus* poll() const { return reinterpret_cast<const KeyStatus*>(as<u16>(PORT_KEYINPUT)); }
+  static const KeyStatus* poll() { return reinterpret_cast<const KeyStatus*>(as<u16>(PORT_KEYINPUT)); }
+};
+
+class KeypadManager
+{
+  KeyStatus current;
+  KeyStatus previous;
+  
+public:
+  KeypadManager() : current(0), previous(0) { }
+  
+  void update()
+  {
+    previous = current;
+    current = *Keypad::poll();
+  }
+  
+  bool isReleased(Key key) { return !current.isPressed(key) && previous.isPressed(key); }
+  bool isPressed(Key key) { return current.isPressed(key) && !previous.isPressed(key); }
+};
+
+class KeypadDelayer
+{
+private:
+  Key _key;
+  u16 mod;
+  u16 counter;
+  
+public:
+  KeypadDelayer(u16 mod) : _key(KEY_NONE), counter(0), mod(mod) { }
+  
+  inline Key key() const { return _key; }
+  inline void setKey(Key key) { _key = key; }
+  inline void reset() { counter = 0; }
+  
+  bool incrementAndCheck(Key key)
+  {
+    if (key != _key)
+    {
+      setKey(key);
+      reset();
+    }
+    
+    ++counter;
+    if (counter == mod)
+    {
+      counter = 0;
+      return true;
+    }
+    
+    return false;
+  }
 };

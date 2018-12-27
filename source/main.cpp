@@ -8,16 +8,13 @@
 #include "gfx.h"
 #include "bg.h"
 #include "keypad.h"
+#include "timer.h"
 #include "bios.h"
 
 struct Ship
 {
-  u32 x;
-  u32 y;
-  u32 accx;
-  u32 accy;
-  Key lastDirx;
-  Key lastDiry;
+  u16 x;
+  u16 y;
 };
 
 alignas(4) color_t shipPalette[] = { color_t(7, 9, 10), color_t(10, 12, 13), color_t(12, 13, 14), color_t(13, 14, 14), color_t(13, 14, 15), color_t(19, 19, 20), color_t(20, 20, 21), color_t(20, 21, 21), color_t(21, 22, 23), color_t(22, 23, 23), color_t(22, 23, 23), color_t(23, 24, 24), color_t(23, 24, 24), color_t(24, 25, 25), color_t(24, 25, 25), color_t(0, 0, 0) };
@@ -29,6 +26,15 @@ u32 shipGfx[] = {
   0x47BBBCCC,0x47BBBCCC,0x47BBBCCC,0x47BBBBBB,0x46BBBBBB,0x25A888AA,0x136ADDDE,0x01244444,
  };
 
+u32 highlight[] = {
+  0x11111110,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,
+  0x01111111,0x10000000,0x10000000,0x10000000,0x10000000,0x10000000,0x10000000,0x10000000,
+  0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,0x11111110,
+  0x10000000,0x10000000,0x10000000,0x10000000,0x10000000,0x10000000,0x10000000,0x01111111,
+};
+
+color_t highlightColor = color_t(32, 5, 5);
+
 int main(void) {
   static_assert(sizeof(port_disp_cnt) == sizeof(u16), "Must be 2 bytes");
   static_assert(sizeof(oam_entry) == sizeof(u16)*3, "Must be 6 bytes");
@@ -36,7 +42,7 @@ int main(void) {
   
   
   Gfx gfx;
-  Keypad keypad;
+  KeypadManager keypad;
   
   math::init();
   
@@ -56,12 +62,11 @@ int main(void) {
   
   *gfx.bg0Hofs() = 0;
   *gfx.bg0Vofs() = 0;
-    
-  auto& palette = gfx.getObjPalette(0);
   
-  memcpy(&palette, shipPalette, PALETTE_SMALL_SIZE * sizeof(color_t));
   memcpy(&gfx.getBgPalette(0), shipPalette, PALETTE_SMALL_SIZE * sizeof(color_t));
-
+  
+  memset(&gfx.getObjPalette(0), 0, PALETTE_SMALL_SIZE * sizeof(color_t));
+  gfx.getObjPalette(0)[1] = color_t(31, 5, 5);
   
   auto* shipTiles = gfx.getObjTileData(512);
   
@@ -69,7 +74,7 @@ int main(void) {
   
   for (int i = 0; i < 8 * 4; ++i)
   {
-    *shipTiles = shipGfx[i];
+    *shipTiles = highlight[i];
     ++shipTiles;
     
     *bgTile = shipGfx[i];
@@ -95,131 +100,39 @@ int main(void) {
   
   object->setAffineMode(oam_affine_mode::DISABLED);
   object->setAffineIndex(0);
-  object->hide();
 
   Ship ship;
-  ship.x = 50;
-  ship.y = Gfx::HEIGHT/2 - 8;
-  ship.accx = ship.accy = 0;
-  ship.lastDirx = ship.lastDiry = KEY_NONE;
-  
-    
+  ship.x = 0;
+  ship.y = 0;
+
   while (1)
   {        
-    const KeyStatus* keys = keypad.poll();
+    keypad.update();
     
-    if (keys->isPressed(KEY_RIGHT))
+    if (keypad.isPressed(KEY_RIGHT))
     {
-      ship.accx = ship.lastDirx == KEY_RIGHT ? ship.accx+1 : 0;
-      if (ship.accx > 1)
-      {
-        if (ship.x < 228)
-          ++ship.x;
-        ship.accx = 0;
-      }
-      ship.lastDirx = KEY_RIGHT;
+      if (ship.x < 14)
+        ++ship.x;
     }
-    else if (keys->isPressed(KEY_LEFT))
+    else if (keypad.isPressed(KEY_LEFT))
     {
-      ship.accx = ship.lastDirx == KEY_LEFT ? ship.accx+1 : 0;
-      if (ship.accx > 2)
-      {
-        if (ship.x > 20)
-          --ship.x;
-        ship.accx = 0;
-      }
-      ship.lastDirx = KEY_LEFT;
-    }
-    else
-    {
-      ship.lastDirx = KEY_NONE;
-      ship.accx = 0;
+      if (ship.x > 0)
+        --ship.x;
     }
     
-    if (keys->isPressed(KEY_UP))
+    if (keypad.isPressed(KEY_UP))
     {
-      ship.accy = ship.lastDiry == KEY_UP ? ship.accy+1 : 0;
-      if (ship.accy > 2)
-      {
-        if (ship.y > 10)
-          --ship.y;
-        ship.accy = 0;
-      }
-      ship.lastDiry = KEY_UP;
+      if (ship.y > 0)
+        --ship.y;
     }
-    else if (keys->isPressed(KEY_DOWN))
+    else if (keypad.isPressed(KEY_DOWN))
     {
-      ship.accy = ship.lastDiry == KEY_DOWN ? ship.accy+1 : 0;
-      if (ship.accy > 2)
-      {
-        if (ship.y < Gfx::HEIGHT - 10)
-          ++ship.y;
-        ship.accy = 0;
-      }
-      ship.lastDiry = KEY_DOWN;
-    }
-    else
-    {
-      ship.lastDiry = KEY_NONE;
-      ship.accy = 0;
+      if (ship.y < 9)
+        ++ship.y;
     }
     
-    object->setX(ship.x - 20);
-    object->setY(ship.y - 8);
-    
-    static bool growing = true;
-    static const fpp incr = fpp(0.005f);
-    
-    static fpp scale = fpp(1.0f);
-    static u16 angle = 0;
-
-    /*auto* affine = gfx.getAffineOAM(0);
-    
-    affine->set<fpp>(scale, scale, angle>>1);
-
-    ++angle;
-    
-    if (growing)
-    {
-      scale += incr;
-      
-      if (scale > 2.0f)
-      {
-        scale = 2.0f;
-        growing = false;
-      }
-    }
-    else
-    {
-      scale -= incr;
-      
-      if (scale < 0.5f)
-      {
-        scale = 0.5f;
-        growing = true;
-      }
-    }*/
-    
-    
-    /*if (growing)
-    {
-      --s;
-      if (s < 1<<7)
-      {
-        s = 1 <<7;
-        growing = false;
-      }
-    }
-    else
-    {
-      ++s;
-      if (s > 1<<9)
-      {
-        s = 1 << 9;
-        growing = true;
-      }
-    }*/
-
+    object->setX(ship.x * 16);
+    object->setY(ship.y * 16);
 
     gfx.waitVsync();
   }
