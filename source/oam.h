@@ -58,7 +58,7 @@ struct oam_entry
 
   static constexpr u16 MASK_AFFINE_MODE = 0x0300;
   static constexpr u16 SHIFT_AFFINE_MODE = 8;
-  
+    
   /* attr0 */
   inline u32 y() const { return attr0 & MASK_Y; }
   inline void setY(u32 value) { attr0 = (attr0 & ~MASK_Y) | (value & MASK_Y); }

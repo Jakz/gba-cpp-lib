@@ -34,6 +34,7 @@ CFLAGS	:=	-g -Wall -O3\
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE)
+CXXFLAGS += $(CFLAGS)
 
 ASFLAGS	:=	$(ARCH)
 LDFLAGS	=	-g $(ARCH) -Wl,-Map,$(notdir $@).map

@@ -3,6 +3,8 @@
 #include "common.h"
 #include "oam.h"
 
+#include <array>
+
 struct color_t
 {
   u16 data;
@@ -17,13 +19,7 @@ struct color_t
   constexpr u32 blue() const { return (data >> 10) & 0x1F; }
 };
 
-struct palette_t
-{
-  color_t colors[16];
-  
-  color_t& operator[](size_t i) { return colors[i]; }
-  const color_t& operator[](size_t i) const { return colors[i]; }
-};
+using palette_t = std::array<u16, 16>;
 
 template<size_t W, size_t H, typename T> struct canvas
 {
@@ -95,7 +91,7 @@ struct port_disp_cnt
   video_mode mode() const { return static_cast<video_mode>(value & VIDEO_MODE_MASK); }
   
   inline void enableBG0() { value = (value & ~ENABLE_BG0) | ENABLE_BG0; }
-
+  inline void enableBG1() { value = (value & ~ENABLE_BG1) | ENABLE_BG1; }
   inline void enableBG2() { value = (value & ~ENABLE_BG2) | ENABLE_BG2; }
   bool isBG2Enabled() { return (value & ENABLE_BG2) != 0; }
   
@@ -168,10 +164,9 @@ struct port_bg_cnt
   
   inline void set(u16 v) { value = v; }
   
+  inline void setPriority(fu16 v) { value = (value & ~PRIORITY_MASK) | v; }
   inline void setTileDataBlock(fu16 v) { value = (value & ~CHAR_BASE_BLOCK_MASK) | (v << CHAR_BASE_BLOCK_SHIFT); }
-
   inline void setTileMapBlock(fu16 v) { value = (value & ~SCREEN_BLOCK_MASK) | (v << SCREEN_BLOCK_SHIFT); }
-  
   inline void setScreenSize(bg_screen_size v) { value = (value & ~SCREEN_SIZE_MASK) | (static_cast<u16>(v) << SCREEN_SIZE_SHIFT); }
   
   static inline addr_t tileDataAtIndex(fu16 i) { return VRAM_BASE + TILE_DATA_BASE_MULTIPLIER*i; }
@@ -233,6 +228,10 @@ public:
   inline port_bg_cnt* bg0Cnt() { return as<port_bg_cnt>(PORT_BG0CNT); }
   inline port_bg_hofs* bg0Hofs() { return as<port_bg_hofs>(PORT_BG0HOFS); }
   inline port_bg_vofs* bg0Vofs() { return as<port_bg_hofs>(PORT_BG0VOFS); }
+  
+  inline port_bg_cnt* bg1Cnt() { return as<port_bg_cnt>(PORT_BG1CNT); }
+  inline port_bg_hofs* bg1Hofs() { return as<port_bg_hofs>(PORT_BG1HOFS); }
+  inline port_bg_vofs* bg1Vofs() { return as<port_bg_hofs>(PORT_BG1VOFS); }
   
   inline u32* getBgTileData(fu16 block, fu16 index) { return as<u32>(port_bg_cnt::tileDataAtIndex(block)) + index*BG_TILE_SIZE_4BPP/sizeof(u32); }
   inline tile_entry* getBgTileMap(fu16 block) { return as<tile_entry>(port_bg_cnt::tileMapAtIndex(block)); }
