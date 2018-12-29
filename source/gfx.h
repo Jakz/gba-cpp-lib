@@ -5,6 +5,16 @@
 
 #include <array>
 
+struct sprite_info_t
+{
+  const void* data;
+  u16 width;
+  u16 height;
+  
+  inline u32 sizeAs4BPP() const { return sizeInTiles()*OBJ_TILE_SIZE_4BPP; }
+  inline u32 sizeInTiles() const { return width*height; }
+};
+
 struct color_t
 {
   u16 data;
@@ -173,6 +183,27 @@ struct port_bg_cnt
   static inline addr_t tileMapAtIndex(fu16 i) { return VRAM_BASE + TILE_MAP_BASE_MULTIPLIER*i; }
 };
 
+using port_bg_hofs = u16;
+using port_bg_vofs = u16;
+
+template<addr_t BASE, addr_t POSX, addr_t POSY>
+struct bg_entry
+{
+  inline void setOffset(fu16 x, fu16 y) { setX(x); setY(y); }
+  inline void setBlocks(fu16 data, fu16 map) { setTileDataBlock(data); setTileMapBlock(map); }
+  
+  inline void setX(fu16 x) { *as<port_bg_hofs>(POSX) = x; }
+  inline void setY(fu16 y) { *as<port_bg_vofs>(POSY) = y; }
+  inline void setPriority(fu16 v) { as<port_bg_cnt>(BASE)->setPriority(v); }
+  inline void setTileDataBlock(fu16 v) { as<port_bg_cnt>(BASE)->setTileDataBlock(v); }
+  inline void setTileMapBlock(fu16 v) { as<port_bg_cnt>(BASE)->setTileMapBlock(v); }
+  inline void setScreenSize(bg_screen_size v) { as<port_bg_cnt>(BASE)->setScreenSize(v); }
+};
+
+using bg0_entry = bg_entry<PORT_BG0CNT, PORT_BG0HOFS, PORT_BG0VOFS>;
+using bg1_entry = bg_entry<PORT_BG1CNT, PORT_BG1HOFS, PORT_BG1VOFS>;
+using bg2_entry = bg_entry<PORT_BG2CNT, PORT_BG2HOFS, PORT_BG2VOFS>;
+
 struct tile_entry
 {
   enum
@@ -181,20 +212,27 @@ struct tile_entry
     HOR_FLIP_FLAG = 0x0400,
     VER_FLIP_FLAG = 0x0800,
     PALETTE_MASK  = 0xF000,
-    PALETTE_SHIFT = 12
+    
+    HOR_FLIP_SHIFT = 10,
+    VER_FLIP_SHIT  = 11,
+    PALETTE_SHIFT  = 12
   };
-
+  
   u16 value;
   
   inline void set(u16 value) { this->value = value; }
-
-  inline void setIndex(fu16 v) { value = (value & ~INDEX_MASK) | v; }
   
+  inline void setIndex(fu16 v) { value = (value & ~INDEX_MASK) | v; }
   inline void setPalette(fu16 i) { value = (value & ~PALETTE_MASK) | (i << PALETTE_SHIFT); }
+  
+  inline void flipHorizontal() { value |= HOR_FLIP_FLAG; }
+  inline void flipVertical() { value |= VER_FLIP_FLAG; }
+  
+  inline void set(fu16 index, fu16 palette, bool flipH, bool flipV)
+  {
+    value = index | (palette << PALETTE_SHIFT) | (flipH << HOR_FLIP_SHIFT) | (flipV << VER_FLIP_SHIT);
+  }
 };
-
-using port_bg_hofs = u16;
-using port_bg_vofs = u16;
 
 class Gfx
 {
@@ -208,8 +246,8 @@ public:
     while ((scanLine = *as<vu16>(PORT_VCOUNT)) < 160);
   }
   
-  oam_entry* getOAM(u32 index) { return reinterpret_cast<oam_entry*>(as<u16>(OAM_BASE) + 4 * index); }
-  oam_affine* getAffineOAM(u32 index) { return reinterpret_cast<oam_affine*>(as<u16>(OAM_BASE) + sizeof(oam_affine)*index); }
+  oam_entry* getOAM(u32 index) { return reinterpret_cast<oam_entry*>(as<oam_entry>(OAM_BASE) + index); }
+  oam_affine* getAffineOAM(u32 index) { return reinterpret_cast<oam_affine*>(as<oam_affine>(OAM_BASE) + index); }
   
   inline palette_t& getObjPalette(u32 paletteIndex) { return *reinterpret_cast<palette_t*>(as<u16>(VRAM_PALETTE_OBJ) + paletteIndex*sizeof(palette_t)); }
   inline palette_t& getBgPalette(fu16 paletteIndex) { return *reinterpret_cast<palette_t*>(as<u16>(VRAM_PALETTE_BG) + paletteIndex*sizeof(palette_t)); }
@@ -225,6 +263,7 @@ public:
   
   inline port_disp_cnt* dispCnt() { return as<port_disp_cnt>(PORT_BASE); }
   
+  /* background related */
   inline port_bg_cnt* bg0Cnt() { return as<port_bg_cnt>(PORT_BG0CNT); }
   inline port_bg_hofs* bg0Hofs() { return as<port_bg_hofs>(PORT_BG0HOFS); }
   inline port_bg_vofs* bg0Vofs() { return as<port_bg_hofs>(PORT_BG0VOFS); }
@@ -232,6 +271,10 @@ public:
   inline port_bg_cnt* bg1Cnt() { return as<port_bg_cnt>(PORT_BG1CNT); }
   inline port_bg_hofs* bg1Hofs() { return as<port_bg_hofs>(PORT_BG1HOFS); }
   inline port_bg_vofs* bg1Vofs() { return as<port_bg_hofs>(PORT_BG1VOFS); }
+  
+  inline bg0_entry bg0() { return bg0_entry(); }
+  inline bg1_entry bg1() { return bg1_entry(); }
+  inline bg2_entry bg2() { return bg2_entry(); }
   
   inline u32* getBgTileData(fu16 block, fu16 index) { return as<u32>(port_bg_cnt::tileDataAtIndex(block)) + index*BG_TILE_SIZE_4BPP/sizeof(u32); }
   inline tile_entry* getBgTileMap(fu16 block) { return as<tile_entry>(port_bg_cnt::tileMapAtIndex(block)); }

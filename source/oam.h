@@ -45,11 +45,12 @@ enum class oam_affine_mode
   HIDDEN = 0b10
 };
 
-struct oam_entry
+struct alignas(4) oam_entry
 {
   u16 attr0;
   u16 attr1;
   u16 attr2;
+  s16 filler;
   
   static constexpr u16 MASK_Y = 0x00FF;
   static constexpr u16 MASK_X = 0x01FF;
@@ -61,7 +62,7 @@ struct oam_entry
     
   /* attr0 */
   inline u32 y() const { return attr0 & MASK_Y; }
-  inline void setY(u32 value) { attr0 = (attr0 & ~MASK_Y) | (value & MASK_Y); }
+  inline void setY(u32 value) volatile { attr0 = (attr0 & ~MASK_Y) | (value & MASK_Y); }
   
   inline void setAffineMode(oam_affine_mode mode) { attr0 = (attr0 & ~MASK_AFFINE_MODE) | static_cast<u16>(mode) << SHIFT_AFFINE_MODE; }
   inline oam_affine_mode affineMode() const { return static_cast<oam_affine_mode>((attr0 & MASK_AFFINE_MODE) >> SHIFT_AFFINE_MODE); }
@@ -107,9 +108,16 @@ struct oam_entry
   inline void setPalette(u32 index) { attr2 = (attr2 & ~0xF000) | ((index & 0xF) << 12); }
   
   void reset() { attr0 = attr1 = attr2 = 0; }
+  void set(const oam_entry* entry)
+  {
+    //TODO: inefficient, memcpy should be used instead
+    attr0 = entry->attr0;
+    attr1 = entry->attr1;
+    attr2 = entry->attr2;
+  }
 };
 
-struct oam_affine
+struct alignas(4) oam_affine
 {
   u16 ___fill0[3];
   fp pa;

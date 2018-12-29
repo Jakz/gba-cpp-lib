@@ -24,7 +24,7 @@ struct KeyStatus
   u16 status;
   
   KeyStatus(u16 status) : status(status) { }
-  bool isPressed(Key key) const { return !(status & key); }
+  bool isPressed(Key key) const { return !(status & (u16)key); }
 };
 
 
@@ -60,7 +60,7 @@ private:
   u16 counter;
   
 public:
-  KeypadDelayer(u16 mod) : _key(KEY_NONE), counter(0), mod(mod) { }
+  KeypadDelayer(u16 mod) : _key(Key::KEY_NONE), counter(0), mod(mod) { }
   
   inline Key key() const { return _key; }
   inline void setKey(Key key) { _key = key; }
