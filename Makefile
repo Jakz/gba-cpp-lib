@@ -18,9 +18,9 @@ include $(DEVKITARM)/gba_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(shell basename $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source ../../src/core ../../src/common ../../src/platforms/gba
 DATA		:=	
-INCLUDES	:=
+INCLUDES	:= ../../src source
 
 #---------------------------------------------------------------------------------
 # options for code generation
