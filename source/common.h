@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-typedef uint32_t u32;
+using u32 = uint32_t;
 typedef uint16_t u16;
 typedef uint8_t u8;
 typedef u32 addr_t;
@@ -24,6 +24,7 @@ static constexpr u32 PALETTE_SMALL_SIZE = 16;
 static constexpr u32 PALETTE_LARGE_SIZE = 256;
 
 static constexpr addr_t OAM_BASE = 0x07000000;
+static constexpr u32 OAM_COUNT = 128;
 
 static constexpr addr_t PORT_VCOUNT = PORT_BASE + 0x6;
 static constexpr addr_t PORT_DISPCNT = PORT_BASE;

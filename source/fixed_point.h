@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstddef>
+#include <type_traits>
+
 template <typename T, typename C, size_t I, size_t F>
 struct fixed_point
 {
