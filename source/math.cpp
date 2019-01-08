@@ -8,6 +8,8 @@ fpp math::sinLookupTable[SIN_TABLE_SIZE];
 
 void math::init()
 {
+  static_assert(sizeof(size_t) == 4, "must be 4 bytes");
+  
   float incr = (2 * FPI) / SIN_TABLE_SIZE;
   
   for (size_t i = 0; i < SIN_TABLE_SIZE; ++i)

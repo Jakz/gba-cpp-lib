@@ -32,6 +32,8 @@ static constexpr addr_t VRAM_PALETTE_OBJ = 0x05000200;
 static constexpr u32 PALETTE_SMALL_SIZE = 16;
 static constexpr u32 PALETTE_LARGE_SIZE = 256;
 
+static constexpr fu16 MAX_MOSAIC_SIZE = 15;
+
 static constexpr addr_t OAM_BASE = 0x07000000;
 static constexpr u32 OAM_COUNT = 128;
 
@@ -52,6 +54,10 @@ static constexpr addr_t PORT_BG2HOFS = PORT_BASE + 0x18;
 static constexpr addr_t PORT_BG2VOFS = PORT_BASE + 0x1A;
 static constexpr addr_t PORT_BG3HOFS = PORT_BASE + 0x1C;
 static constexpr addr_t PORT_BG3VOFS = PORT_BASE + 0x1E;
+
+static constexpr addr_t PORT_MOSAIC = PORT_BASE + 0x4C;
+static constexpr addr_t PORT_BLDCNT = PORT_BASE + 0x50;
+static constexpr addr_t PORT_BLDALPHA = PORT_BASE + 0x52;
 
 static constexpr addr_t PORT_TM0CNT_L = PORT_BASE + 0x100;
 static constexpr addr_t PORT_TM1CNT_L = PORT_BASE + 0x104;

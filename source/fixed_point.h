@@ -96,3 +96,5 @@ struct fixed_point
 
 using fp = fixed_point<signed short, signed int, 8, 8>;
 using fpp = fixed_point<signed short, signed int, 4, 12>;
+//TODO: verify behavior, blend alpha register
+using sfp = fixed_point<signed char, signed int, 1, 4>;

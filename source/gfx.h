@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "oam.h"
+#include "bg.h"
 
 #include <array>
 
@@ -89,7 +90,9 @@ struct port_disp_cnt
     ENABLE_OBJ = 0x1000,
     ENABLE_WINDOW0 = 0x2000,
     ENABLE_WINDOW1 = 0x4000,
-    ENABLE_OBJ_WINDOW = 0x8000
+    ENABLE_OBJ_WINDOW = 0x8000,
+    
+    ENABLE_BG_MASK = ENABLE_BG0 | ENABLE_BG1 | ENABLE_BG2 | ENABLE_BG3
   };
   
   void set(u16 value) { this->value = value; }
@@ -100,11 +103,20 @@ struct port_disp_cnt
   void setMode(video_mode mode) { value = (value & ~VIDEO_MODE_MASK) | static_cast<u32>(mode); }
   video_mode mode() const { return static_cast<video_mode>(value & VIDEO_MODE_MASK); }
   
+  /* background related */
   inline void enableBG0() { value = (value & ~ENABLE_BG0) | ENABLE_BG0; }
   inline void enableBG1() { value = (value & ~ENABLE_BG1) | ENABLE_BG1; }
   inline void enableBG2() { value = (value & ~ENABLE_BG2) | ENABLE_BG2; }
-  bool isBG2Enabled() { return (value & ENABLE_BG2) != 0; }
+  inline void enableBG3() { value = (value & ~ENABLE_BG3) | ENABLE_BG3; }
+  inline void enableBGs() { value = value | ENABLE_BG_MASK; }
+
+  inline void enableBG(bool bg0, bool bg1, bool bg2, bool bg3)
+  {
+    value = (value & ~ENABLE_BG_MASK);
+    value = value | (bg0 ? ENABLE_BG0 : 0) | (bg0 ? ENABLE_BG1 : 0) | (bg0 ? ENABLE_BG2 : 0) | (bg0 ? ENABLE_BG3 : 0);
+  }
   
+  /* obj related */
   void enableOBJ() { value = (value & ~ENABLE_OBJ) | ENABLE_OBJ; }
   bool isOBJEnabled() { return (value & ENABLE_OBJ) != 0; }
   
@@ -143,95 +155,76 @@ struct port_disp_stat
   u32 vcount() const { return value & 0xFF; }
 };
 
-enum class bg_screen_size
-{
-  SIZE32x32 = 0,
-  SIZE64x32 = 1,
-  SIZE32x64 = 2,
-  SIZE64x64 = 3
-};
-
-struct port_bg_cnt
+/* special effects */
+struct port_mosaic_size
 {
   enum
   {
-    PRIORITY_MASK         = 0x0003,
-    CHAR_BASE_BLOCK_MASK  = 0x000C,
-    CHAR_BASE_BLOCK_SHIFT = 3,
-    MOSAIC_FLAG           = 0x0040,
-    COLOR_MODE_FLAG       = 0x0080,
-    
-    SCREEN_BLOCK_MASK     = 0x1F00,
-    SCREEN_BLOCK_SHIFT    = 8,
-    
-    OVERFLOW_MODE_FLAG    = 0x2000,
-    
-    SCREEN_SIZE_MASK      = 0xC000,
-    SCREEN_SIZE_SHIFT     = 13
+    MOSAIC_MASK = 0xF,
+    MOSAIC_BG_H_SHIFT = 0,
+    MOSAIC_BG_V_SHIFT = 4,
+    MOSAIC_OBJ_H_SHIFT = 8,
+    MOSAIC_OBJ_V_SHIFT = 12,
   };
   
   u16 value;
   
-  inline void set(u16 v) { value = v; }
-  
-  inline void setPriority(fu16 v) { value = (value & ~PRIORITY_MASK) | v; }
-  inline void setTileDataBlock(fu16 v) { value = (value & ~CHAR_BASE_BLOCK_MASK) | (v << CHAR_BASE_BLOCK_SHIFT); }
-  inline void setTileMapBlock(fu16 v) { value = (value & ~SCREEN_BLOCK_MASK) | (v << SCREEN_BLOCK_SHIFT); }
-  inline void setScreenSize(bg_screen_size v) { value = (value & ~SCREEN_SIZE_MASK) | (static_cast<u16>(v) << SCREEN_SIZE_SHIFT); }
-  
-  static inline addr_t tileDataAtIndex(fu16 i) { return VRAM_BASE + TILE_DATA_BASE_MULTIPLIER*i; }
-  static inline addr_t tileMapAtIndex(fu16 i) { return VRAM_BASE + TILE_MAP_BASE_MULTIPLIER*i; }
+  inline void setBG(fu16 h, fu16 v) { value = (value & 0xFF00) | (h << MOSAIC_BG_H_SHIFT) | (v << MOSAIC_BG_V_SHIFT); }
+  inline void setOBJ(fu16 h, fu16 v) { value = (value & 0x00FF) | (h << MOSAIC_OBJ_H_SHIFT) | (v << MOSAIC_OBJ_V_SHIFT); }
 };
 
-using port_bg_hofs = u16;
-using port_bg_vofs = u16;
-
-template<addr_t BASE, addr_t POSX, addr_t POSY>
-struct bg_entry
+enum class fx_type
 {
-  inline void setOffset(fu16 x, fu16 y) { setX(x); setY(y); }
-  inline void setBlocks(fu16 data, fu16 map) { setTileDataBlock(data); setTileMapBlock(map); }
-  
-  inline void setX(fu16 x) { *as<port_bg_hofs>(POSX) = x; }
-  inline void setY(fu16 y) { *as<port_bg_vofs>(POSY) = y; }
-  inline void setPriority(fu16 v) { as<port_bg_cnt>(BASE)->setPriority(v); }
-  inline void setTileDataBlock(fu16 v) { as<port_bg_cnt>(BASE)->setTileDataBlock(v); }
-  inline void setTileMapBlock(fu16 v) { as<port_bg_cnt>(BASE)->setTileMapBlock(v); }
-  inline void setScreenSize(bg_screen_size v) { as<port_bg_cnt>(BASE)->setScreenSize(v); }
+  NONE = 0,
+  ALPHA_BLEND = 1,
+  BRIGHTNESS_INCREASE = 2,
+  BRIGHTNESS_DECREASE = 3
 };
 
-using bg0_entry = bg_entry<PORT_BG0CNT, PORT_BG0HOFS, PORT_BG0VOFS>;
-using bg1_entry = bg_entry<PORT_BG1CNT, PORT_BG1HOFS, PORT_BG1VOFS>;
-using bg2_entry = bg_entry<PORT_BG2CNT, PORT_BG2HOFS, PORT_BG2VOFS>;
+enum class fx_target
+{
+  BG0 = 0b000001,
+  BG1 = 0b000010,
+  BG2 = 0b000100,
+  BG3 = 0b001000,
+  OBJ = 0b010000,
+  BD  = 0b100000,
+};
 
-struct tile_entry
+struct port_blend_cnt
 {
   enum
   {
-    INDEX_MASK =    0x03FF,
-    HOR_FLIP_FLAG = 0x0400,
-    VER_FLIP_FLAG = 0x0800,
-    PALETTE_MASK  = 0xF000,
+    BLEND_BG0 = 0b000001,
+    BLEND_BG1 = 0b000010,
+    BLEND_BG2 = 0b000100,
+    BLEND_BG3 = 0b001000,
+    BLEND_OBJ = 0b010000,
+    BLEND_BD  = 0b100000,
     
-    HOR_FLIP_SHIFT = 10,
-    VER_FLIP_SHIT  = 11,
-    PALETTE_SHIFT  = 12
+    FX_MASK  = 0x3,
+    FX_SHIFT = 6,
+    
+    TARGET_2ND_SHIFT = 8,
   };
   
   u16 value;
   
-  inline void set(u16 value) { this->value = value; }
+  inline void setFX(fx_type type) { value = (value & ~(FX_MASK << FX_SHIFT)) | (static_cast<u16>(type) << FX_SHIFT); }
+  inline void enable1stTarget(fx_target target) { value |= static_cast<u16>(target); }
+  inline void enable2stTarget(fx_target target) { value |= static_cast<u16>(target) << TARGET_2ND_SHIFT; }
   
-  inline void setIndex(fu16 v) { value = (value & ~INDEX_MASK) | v; }
-  inline void setPalette(fu16 i) { value = (value & ~PALETTE_MASK) | (i << PALETTE_SHIFT); }
-  
-  inline void flipHorizontal() { value |= HOR_FLIP_FLAG; }
-  inline void flipVertical() { value |= VER_FLIP_FLAG; }
-  
-  inline void set(fu16 index, fu16 palette, bool flipH, bool flipV)
-  {
-    value = index | (palette << PALETTE_SHIFT) | (flipH << HOR_FLIP_SHIFT) | (flipV << VER_FLIP_SHIT);
-  }
+  inline void disable1stTarget() { value &= 0xFF00 | (FX_MASK << FX_SHIFT); }
+  inline void disable2ndTarget() { value &= 0x00FF; }
+};
+
+struct port_blend_alpha
+{
+  sfp evb;
+  sfp eva;
+
+  void set1st(float v) { eva = v; }
+  void set2nd(float v) { evb = v; }
 };
 
 class Gfx
@@ -262,7 +255,10 @@ public:
   inline u32* getObjTileData(u32 index) { return as<u32>(VRAM_OBJ_TILES) + index*OBJ_TILE_SIZE_4BPP/sizeof(u32); }
   
   inline port_disp_cnt* dispCnt() { return as<port_disp_cnt>(PORT_BASE); }
-  
+  inline port_mosaic_size* mosaicSize() { return as<port_mosaic_size>(PORT_MOSAIC); }
+  inline port_blend_cnt* blendCnt() { return as<port_blend_cnt>(PORT_BLDCNT); }
+  inline port_blend_alpha* blendAlpha() { return as<port_blend_alpha>(PORT_BLDALPHA); }
+
   /* background related */
   inline port_bg_cnt* bg0Cnt() { return as<port_bg_cnt>(PORT_BG0CNT); }
   inline port_bg_hofs* bg0Hofs() { return as<port_bg_hofs>(PORT_BG0HOFS); }
@@ -272,9 +268,18 @@ public:
   inline port_bg_hofs* bg1Hofs() { return as<port_bg_hofs>(PORT_BG1HOFS); }
   inline port_bg_vofs* bg1Vofs() { return as<port_bg_hofs>(PORT_BG1VOFS); }
   
+  inline port_bg_cnt* bg2Cnt() { return as<port_bg_cnt>(PORT_BG2CNT); }
+  inline port_bg_hofs* bg2Hofs() { return as<port_bg_hofs>(PORT_BG2HOFS); }
+  inline port_bg_vofs* bg2Vofs() { return as<port_bg_hofs>(PORT_BG2VOFS); }
+  
+  inline port_bg_cnt* bg3Cnt() { return as<port_bg_cnt>(PORT_BG3CNT); }
+  inline port_bg_hofs* bg3Hofs() { return as<port_bg_hofs>(PORT_BG3HOFS); }
+  inline port_bg_vofs* bg3Vofs() { return as<port_bg_hofs>(PORT_BG3VOFS); }
+  
   inline bg0_entry bg0() { return bg0_entry(); }
   inline bg1_entry bg1() { return bg1_entry(); }
   inline bg2_entry bg2() { return bg2_entry(); }
+  inline bg3_entry bg3() { return bg3_entry(); }
   
   inline u32* getBgTileData(fu16 block, fu16 index) { return as<u32>(port_bg_cnt::tileDataAtIndex(block)) + index*BG_TILE_SIZE_4BPP/sizeof(u32); }
   inline tile_entry* getBgTileMap(fu16 block) { return as<tile_entry>(port_bg_cnt::tileMapAtIndex(block)); }
